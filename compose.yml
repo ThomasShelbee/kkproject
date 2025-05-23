@@ -1,0 +1,9 @@
+services:
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kk
+    ports:
+      - "1600:1600"
+    restart: unless-stopped

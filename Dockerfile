@@ -1,17 +1,27 @@
+# Стадия для сборки фронтенда
+
+FROM node:22-slim as frontend-builder
+
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ .
+COPY frontend/.env.example ./.env
+RUN npm run build
+
+# Финальная стадия для бэкенда
 FROM python:3.10-slim
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем файл со списком зависимостей и устанавливаем их + Gunicorn
+# Копируем собранные файлы фронтенда
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Устанавливаем Python-зависимости
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем остальной код
+# Копируем код бэкенда
 COPY . .
 
-# Открываем порт (по умолчанию 5000 для Flask)
-EXPOSE 5000
-
-# Запускаем Gunicorn, указывая модуль и приложение (app:app)
 CMD ["sh", "entrypoint.sh"]

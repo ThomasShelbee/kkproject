@@ -4,8 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: kk
-    volumes:
-        - "./dist:/app/frontend/dist"
     ports:
       - "1600:1600"
     restart: unless-stopped

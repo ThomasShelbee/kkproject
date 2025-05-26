@@ -5,9 +5,11 @@ FROM node:22-slim as frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
-COPY frontend/ .
+COPY frontend/ /app/frontend/
 COPY frontend/.env.example ./.env
 RUN npm run build
+
+RUN [ -d "/app/frontend/dist" ] || (echo "Директория dist не создана" && exit 1)
 
 # Финальная стадия для бэкенда
 FROM python:3.10-slim

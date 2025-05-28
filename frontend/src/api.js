@@ -15,13 +15,13 @@ async function getGif() {
     return await gif.json()
 }
 
-async function deletePromoBack(promo) {
-    promo = await fetch(`${api_host}/api/delete-promo/${promo.id}`, {
+async function deletePromoBack(promoUsed) {
+    let promo = await fetch(`${api_host}/api/delete-promo`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(promo)
+        body: JSON.stringify(promoUsed)
     })
     return await promo.json()
 }

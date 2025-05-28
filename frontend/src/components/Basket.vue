@@ -1,5 +1,5 @@
 <script>
-import {api_host} from "@/api.js"
+import {api_host, deletePromoBack} from "@/api.js"
 import {getPromos} from "@/api";
 import {sendPurchase} from "@/api";
 
@@ -19,32 +19,59 @@ export default {
             },
             localPromo: null,
             promos: getPromos(),
-            mainSum: null,
+            mainSum: 0,
             host: api_host,
         };
     },
     methods: {
         // Метод для сохранения изменений или добавления нового артиста
         Purchase() {
-            this.localPurchase.promo = this.promoUsed.title;
-            this.localPurchase.cart = this.cartItems;
-            this.localPurchase.sum = this.mainSum;
-            this.localPurchase.discount = this.promoUsed.price;
-            sendPurchase(this.localPurchase);
+            if (this.mainSum > 0) {
+                this.localPurchase.promo = this.promoUsed.title;
+                this.localPurchase.cart = this.cartItems;
+                this.localPurchase.sum = this.mainSum;
+                this.localPurchase.discount = this.promoUsed.price;
+                sendPurchase(this.localPurchase);
+                this.resetCart();
+            }
+            else {
+                this.message.text = 'Вы ничего не добавили в корзину!';
+            }
+        },
+        resetCart() {
+            this.cartItems = [];
+            this.promoUsed.title = '';
+            this.promoUsed.price = 0;
+            this.category.page = 'all';
+            this.message.text = '';
+            this.mainSum = 0;
+            this.$router.push('/');
         },
         checkPromo(localPromo) {
             let localMessage = "Такого промокода нет";
-            if (this.promoUsed.price !== 0) {
-                localMessage = "Промокод уже использован";
+            if (this.mainSum === 0) {
+                localMessage = 'Вы ничего не добавили в корзину!';
+                this.promoUsed.title = localPromo;
             }
             else {
-                for (let promo in this.promos) {
-                    if (this.promos[promo].title === localPromo) {
-                        this.promoUsed.title = this.promos[promo].title;
-                        this.promoUsed.price = this.promos[promo].price;
-                        localMessage = "Промокод успешно применен";
-                        this.promos.pop(promo.id);
-                        break;
+                if (this.promoUsed.price !== 0) {
+                    localMessage = "Промокод уже использован";
+                }
+                else {
+                    for (let promo in this.promos) {
+                        if (this.promos[promo].title === localPromo) {
+                            if (this.promos[promo].quantity > 0){
+                                this.promoUsed.title = this.promos[promo].title;
+                                this.promoUsed.price = this.promos[promo].price;
+                                localMessage = "Промокод успешно применен";
+                                this.promos[promo].quantity -= 1;
+                                deletePromoBack(this.promos[promo].title);
+                            }
+                            else {
+                                localMessage = "Промокод закончился";
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -70,7 +97,6 @@ export default {
             for (let item in this.cartItems) {
                 localSum += this.cartItems[item].price * this.cartItems[item].quantity;
             }
-            console.log(this.promoUsed);
             this.mainSum = localSum - this.promoUsed.price;
             return this.mainSum;
         },
@@ -107,11 +133,11 @@ export default {
                                     <span><img style="max-width:50px" :src="host + '/api/get-picture/' + item.url" alt=""></span>
                                     <span>{{item.title}}: </span>
                                     <span>{{item.size}}</span>
-                                    <span><button @click="changeQuantityLess(item); checkSum()" type="submit">-</button></span>
+                                    <span style="margin-left: 5px; margin-right: 5px"><img class="less-more-remove" @click="changeQuantityLess(item); checkSum()" style="max-width: 16px" :src="host + '/api/get-picture/minus'" alt=""></span>
                                     <span>{{item.quantity}}</span>
-                                    <span><button @click="changeQuantityMore(item); checkSum()" type="submit">+</button></span>
+                                    <span style="margin-left: 5px; margin-right: 5px"><img class="less-more-remove" @click="changeQuantityMore(item); checkSum()" style="max-width: 16px" :src="host + '/api/get-picture/plus'" alt=""></span>
                                     <span>{{item.price}}P</span>
-                                    <span><button @click="removeItem(item); checkSum()" type="submit">x</button></span>
+                                    <span style="margin-left: 5px"><img class="less-more-remove" @click="removeItem(item); checkSum()" style="max-width: 16px" :src="host + '/api/get-picture/remove'" alt=""></span>
                                 </li>
                             </ul>
 
@@ -158,7 +184,7 @@ export default {
                                 <div class="mb-3">
                                     <label for="purchase-promo" class="form-label">Промокод</label>
                                     <form id="purchase-promo" @submit.prevent="checkPromo(localPromo)">
-                                        <div v-if="this.promoUsed.price !== 0">
+                                        <div v-if="this.promoUsed.title !== ''">
                                             <input
                                                 type="text"
                                                 class="form-control"
@@ -176,14 +202,14 @@ export default {
                                                 required
                                             />
                                         </div>
-                                        <span><button type="submit">Активировать</button></span>
+                                        <span><button style="margin-top: 5px" type="submit" class="btn btn-dark">Активировать</button></span>
                                     </form>
                                     <p>{{this.message.text}}</p>
                                 </div>
                                 <h5>Сумма заказа: {{sum}}P</h5>
                                 <!-- Кнопки -->
                                 <div class="d-flex justify-content-between">
-                                    <a href="/"><button type="submit" class="btn btn-success">Заказать</button></a>
+                                    <button type="submit" class="btn btn-dark">Заказать</button>
                                 </div>
                             </form>
 
@@ -196,4 +222,7 @@ export default {
 </template>
 
 <style scoped>
+.less-more-remove {
+    cursor: pointer;
+}
 </style>

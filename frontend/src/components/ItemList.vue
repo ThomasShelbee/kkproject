@@ -41,6 +41,9 @@ export default {
                 this.localItems = this.filteredItems;
             }
         },
+        reload() {
+            window.location.reload();
+        }
     },
     mounted() {
         if (this.category.page === "all") {
@@ -60,9 +63,9 @@ export default {
     </div>
 
     <div v-show="isBasketVisible">
-        <Basket @closeBasket="closeBasket"></Basket>
+        <Basket @reload="reload()" @closeBasket="closeBasket"></Basket>
     </div>
-    <LowerPart></LowerPart>
+    <!--<LowerPart></LowerPart>-->
 </template>
 
 <style scoped>

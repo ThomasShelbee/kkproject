@@ -1,17 +1,4 @@
-from flask import Flask, request, jsonify, send_file
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_cors import CORS
-from flask_mail import Mail, Message
-
 from config import *
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cd_collection.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-CORS(app)
 
 # модель для хранения задачи
 class Items(db.Model):
@@ -77,21 +64,21 @@ def get_picture(picture_url):
 def get_gif():
     return send_file('static\\kk-gif.mp4')
 
-@app.route('/api/delete-promo/<int:promo_id>', methods=['DELETE'])
-def delete_promo(promo_id):
-    promo = Promos.query.get(promo_id)
+@app.route('/api/delete-promo', methods=['DELETE'])
+def delete_promo():
+    promo_used = request.get_json()
+    promo = Promos.query.filter_by(title=promo_used).first()
     if promo.quantity > 1:
         promo.quantity -= 1
         db.session.commit()
-        return jsonify({"used_promo_id": promo_id})
+        return jsonify({"used_promo_title": promo_used})
     elif promo.quantity == 1:
         db.session.delete(promo)
-        return jsonify({"deleted_id": promo_id})
+        return jsonify({"deleted_promo": promo_used})
 
 @app.route('/api/purchase', methods=['POST'])
 def new_purchase():
     purchase = request.get_json()
-    print(purchase['phone'])
     msg_to_customer = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=[purchase['email']])
     msg_to_seller = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=['defolt.pon.da@gmail.com'])
     msg_to_customer.body = 'Здравствуйте, ' + purchase['name'] + '! \nМы приняли ваш заказ на сумму ' + str(purchase['sum']) + '. \nВы заказали: \n'
@@ -104,6 +91,7 @@ def new_purchase():
     msg_to_customer.body += 'Скидка по промокоду составила ' + str(purchase['discount']) + 'P'
     mail.send(msg_to_customer)
     mail.send(msg_to_seller)
+    print('sent')
     return jsonify({'purchase': purchase}), 200
 
 

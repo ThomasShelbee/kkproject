@@ -91,29 +91,29 @@ export default {
             </div>
             <div class="col-md-6">
                 <h1 style="color: #FFFFFF;">{{ this.item.title }}</h1>
-                <h4 style="color: #FFFFFF; margin-top: 30px">{{this.item.price}}p</h4>
+                <h3 style="color: #FFFFFF; margin-top: 30px">{{this.item.price}}p</h3>
 
-                    <select name="size" v-model="this.itemSize">
+                <select style="margin-top: 10px" name="size" v-model="this.itemSize">
 
-                        <option v-show="this.item.s_size > 0" value="S">S</option>
+                    <option v-show="this.item.s_size > 0" value="S">S</option>
 
-                        <option v-show="this.item.m_size > 0" value="M">M</option>
+                    <option v-show="this.item.m_size > 0" value="M">M</option>
 
-                        <option v-show="this.item.l_size > 0" value="L">L</option>
+                    <option v-show="this.item.l_size > 0" value="L">L</option>
 
-                        <option v-show="this.item.xl_size > 0" value="XL">XL</option>
+                    <option v-show="this.item.xl_size > 0" value="XL">XL</option>
 
-                    </select>
+                </select>
 
-                <p><a class="btn btn-light" @click="addToCart()">В корзину</a></p>
+                <button class="btn btn-light" style="margin-left: 30px;  border: 0" @click="addToCart()">В корзину</button>
 
-                <p style="color: #FFFFFF; margin-top: 30px">{{ this.item.description }}</p>
+                <h5 style="color: #FFFFFF; margin-top: 30px">{{ this.item.description }}</h5>
             </div>
         </div>
     </div>
 
 
-    <LowerPart></LowerPart>
+    <!--<LowerPart></LowerPart>-->
 </template>
 
 <style scoped>

@@ -46,36 +46,26 @@ def present_promo(promo):
     }
 
 # добавляем новую задачу
-@app.route('/api/get-items', methods=['GET', 'OPTIONS'])
+@app.route('/api/get-items', methods=['GET'])
 def get_items():
-    if request.method == 'OPTIONS':
-        return {}, 200
     items = Items.query.all()
     return [present_item(item) for item in items]
 
-@app.route('/api/get-promos', methods=['GET', 'OPTIONS'])
+@app.route('/api/get-promos', methods=['GET'])
 def get_promos():
-    if request.method == 'OPTIONS':
-        return {}, 200
     promos = Promos.query.all()
     return [present_promo(promo) for promo in promos]
 
-@app.route('/api/get-picture/<picture_url>', methods=['GET', 'OPTIONS'])
+@app.route('/api/get-picture/<picture_url>', methods=['GET'])
 def get_picture(picture_url):
-    if request.method == 'OPTIONS':
-        return {}, 200
     return send_file('static\\' + picture_url + '.png')
 
-@app.route('/api/get-gif', methods=['GET', 'OPTIONS'])
+@app.route('/api/get-gif', methods=['GET'])
 def get_gif():
-    if request.method == 'OPTIONS':
-        return {}, 200
     return send_file('static\\kk-gif.mp4')
 
-@app.route('/api/delete-promo', methods=['DELETE', 'OPTIONS'])
+@app.route('/api/delete-promo', methods=['DELETE'])
 def delete_promo():
-    if request.method == 'OPTIONS':
-        return {}, 200
     promo_used = request.get_json()
     promo = Promos.query.filter_by(title=promo_used).first()
     if promo.quantity > 1:
@@ -86,10 +76,8 @@ def delete_promo():
         db.session.delete(promo)
         return jsonify({"deleted_promo": promo_used})
 
-@app.route('/api/purchase', methods=['POST', 'OPTIONS'])
+@app.route('/api/purchase', methods=['POST'])
 def new_purchase():
-    if request.method == 'OPTIONS':
-        return {}, 200
     purchase = request.get_json()
     msg_to_customer = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=[purchase['email']])
     msg_to_seller = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=['defolt.pon.da@gmail.com'])

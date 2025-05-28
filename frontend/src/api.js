@@ -10,11 +10,6 @@ async function getPromos() {
     return await promos.json()
 }
 
-async function getPicture(url) {
-    let picture = await fetch(`${api_host}/api/get-picture/${url}`)
-    return await picture.json()
-}
-
 async function getGif() {
     let gif = await fetch(`${api_host}/api/get-gif`)
     return await gif.json()
@@ -31,4 +26,15 @@ async function deletePromoBack(promo) {
     return await promo.json()
 }
 
-export {getItems, getPromos, getPicture, deletePromoBack, getGif, api_host}
+async function sendPurchase(newPurchase) {
+    let purchase = await fetch(`${api_host}/api/purchase`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newPurchase)
+    })
+    return await purchase.json()
+}
+
+export {getItems, getPromos, deletePromoBack, getGif, sendPurchase, api_host}

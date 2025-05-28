@@ -1,6 +1,7 @@
 <script>
-
-import {getPromos, getPicture, deletePromoBack} from "@/api";
+import {api_host} from "@/api.js"
+import {getPromos} from "@/api";
+import {sendPurchase} from "@/api";
 
 export default {
     name: "Basket",
@@ -11,43 +12,44 @@ export default {
                 name: "",
                 phone: "",
                 email: "",
-
+                promo: "",
+                discount: 0,
+                sum: null,
+                cart: null
             },
             localPromo: null,
-            promoTrue: false,
-            error: null,
             promos: getPromos(),
-            sum: null,
+            mainSum: null,
+            host: api_host,
         };
     },
     methods: {
         // Метод для сохранения изменений или добавления нового артиста
-        savePurchase() {
-            this.$emit("save", {...this.localPurchase}); // Генерируем событие сохранения с данными артиста
-            this.resetForm(); // Очищаем форму после сохранения
-        },
-        // Сбрасываем форму к исходному состоянию
-        resetForm() {
-            this.localPurchase = {
-                title: ""
-            };
-        },
-        deletePromoFront(promo) {
-            this.promos.pop(promo.id);
+        Purchase() {
+            this.localPurchase.promo = this.promoUsed.title;
+            this.localPurchase.cart = this.cartItems;
+            this.localPurchase.sum = this.mainSum;
+            this.localPurchase.discount = this.promoUsed.price;
+            sendPurchase(this.localPurchase);
         },
         checkPromo(localPromo) {
-            let localError = "Нет такого промокода";
-            for (let promo in this.promos) {
-                if (this.promos[promo].name === localPromo) {
-                    this.sum -= localPromo.price;
-                    localError = "";
-                    this.promoTrue = true;
-                    deletePromoBack(promo);
-                    deletePromoFront(promo);
-                    break;
+            let localMessage = "Такого промокода нет";
+            if (this.promoUsed.price !== 0) {
+                localMessage = "Промокод уже использован";
+            }
+            else {
+                for (let promo in this.promos) {
+                    if (this.promos[promo].title === localPromo) {
+                        this.promoUsed.title = this.promos[promo].title;
+                        this.promoUsed.price = this.promos[promo].price;
+                        localMessage = "Промокод успешно применен";
+                        this.promos.pop(promo.id);
+                        break;
+                    }
                 }
             }
-            this.error = localError;
+            this.message.text = localMessage;
+            return this.checkSum();
         },
         changeQuantityLess(item) {
             if (item.quantity === 1) {
@@ -66,26 +68,23 @@ export default {
         checkSum() {
             let localSum = 0;
             for (let item in this.cartItems) {
-                localSum += item.price * item.quantity;
+                localSum += this.cartItems[item].price * this.cartItems[item].quantity;
             }
-            console.log(localSum);
-            return localSum;
+            console.log(this.promoUsed);
+            this.mainSum = localSum - this.promoUsed.price;
+            return this.mainSum;
         },
         closeBasket() {
             this.$emit("closeBasket");
         },
-        purchase() {
-
-        }
     },
-    watch: {
-        purchase(newPurchase) {
-            this.localPurchase = { ...newPurchase };
+    computed: {
+        sum() {
+            return this.checkSum();
         }
     },
     async mounted() {
         this.promos = await getPromos();
-        this.sum = await this.checkSum();
     }
 }
 </script>
@@ -105,21 +104,21 @@ export default {
                         <div id="upper-part">
                             <ul class="list-group">
                                 <li class="list-group-item" v-for="item in this.cartItems">
-                                    <span><img src="http://localhost:8080/api/get-picture/{{item.url}}" alt=""></span>
-                                    <span>{{item.title}}</span>
+                                    <span><img style="max-width:50px" :src="host + '/api/get-picture/' + item.url" alt=""></span>
+                                    <span>{{item.title}}: </span>
                                     <span>{{item.size}}</span>
-                                    <span><button @click="changeQuantityLess(item)" type="submit">-</button></span>
+                                    <span><button @click="changeQuantityLess(item); checkSum()" type="submit">-</button></span>
                                     <span>{{item.quantity}}</span>
-                                    <span><button @click="changeQuantityMore(item)" type="submit">+</button></span>
+                                    <span><button @click="changeQuantityMore(item); checkSum()" type="submit">+</button></span>
                                     <span>{{item.price}}P</span>
-                                    <span><button @click="removeItem(item)" type="submit">x</button></span>
+                                    <span><button @click="removeItem(item); checkSum()" type="submit">x</button></span>
                                 </li>
                             </ul>
-                            <h5>Сумма заказа: {{checkSum()}}P</h5>
+
                         </div>
 
                         <div id="lower-part">
-                            <form @submit.prevent="savePurchase">
+                            <form @submit.prevent="Purchase">
                                 <div class="mb-3">
                                     <label for="purchase-name" class="form-label">ФИО</label>
                                     <input
@@ -139,7 +138,7 @@ export default {
                                         v-model="localPurchase.phone"
                                         type="tel"
                                         class="form-control"
-                                        placeholder="+7 999 999 99 99"
+                                        placeholder="+7 (999) 999-99-99"
                                         required
                                     />
                                 </div>
@@ -159,24 +158,35 @@ export default {
                                 <div class="mb-3">
                                     <label for="purchase-promo" class="form-label">Промокод</label>
                                     <form id="purchase-promo" @submit.prevent="checkPromo(localPromo)">
-                                        <input
-                                            v-model="localPromo"
-                                            type="text"
-                                            class="form-control"
-                                            placeholder="Промокод"
-                                            required
-                                        />
+                                        <div v-if="this.promoUsed.price !== 0">
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                placeholder="Промокод"
+                                                :value="this.promoUsed.title"
+                                                required
+                                            />
+                                        </div>
+                                        <div v-else>
+                                            <input
+                                                v-model="localPromo"
+                                                type="text"
+                                                class="form-control"
+                                                placeholder="Промокод"
+                                                required
+                                            />
+                                        </div>
                                         <span><button type="submit">Активировать</button></span>
                                     </form>
-                                    <p v-if="this.error !== null ">{{this.error}}</p>
-                                    <p v-else-if="this.promoTrue">Промокод применен успешно</p>
+                                    <p>{{this.message.text}}</p>
                                 </div>
-
+                                <h5>Сумма заказа: {{sum}}P</h5>
                                 <!-- Кнопки -->
                                 <div class="d-flex justify-content-between">
-                                    <button @click="purchase()" type="submit" class="btn btn-success">Купить</button>
+                                    <a href="/"><button type="submit" class="btn btn-success">Заказать</button></a>
                                 </div>
                             </form>
+
                         </div>
                     </div>
                 </div>

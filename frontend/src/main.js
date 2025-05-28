@@ -19,11 +19,9 @@ import {createApp, reactive} from 'vue'
 import App from './App.vue'
 
 const app = createApp(App)
-
-getItems().then((items) => {
-    app.config.globalProperties.items = items;
-})
-
+app.config.globalProperties.items = await getItems();
+app.config.globalProperties.promoUsed = reactive({title: "", price: 0});
+app.config.globalProperties.message = reactive({text: ""});
 app.config.globalProperties.cartItems = reactive([]);
 app.config.globalProperties.category = reactive({
     page: "all"

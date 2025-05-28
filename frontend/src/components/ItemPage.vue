@@ -1,6 +1,6 @@
 <script>
+import {api_host} from "@/api.js"
 import UpperPart from "@/components/UpperPart.vue";
-import messageBus from '@/MessageBus.js';
 import LowerPart from "@/components/LowerPart.vue";
 import Basket from "@/components/Basket.vue";
 
@@ -20,7 +20,18 @@ export default {
             this.$router.push('/');
         },
         addToCart() {
-            this.cartItems.push({url: this.item.url, size: this.itemSize, title: this.item.title, quantity: 1, price: this.item.price});
+            let a = 0;
+            for (let item of this.cartItems) {
+                if (item.url === this.item.url) {
+                    if (item.size === this.itemSize) {
+                        item.quantity++;
+                        a = 1;
+                    }
+                }
+            }
+            if (a === 0) {
+                this.cartItems.push({url: this.item.url, size: this.itemSize, title: this.item.title, quantity: 1, price: this.item.price});
+            }
             this.openCart()
         }
     },
@@ -29,7 +40,8 @@ export default {
             url: this.$route.params.url,
             item: this.items.find(item => item.url === this.$route.params.url),
             isCartVisible: false,
-            itemSize: null
+            itemSize: "S",
+            host: api_host,
         }
     }
 }
@@ -44,7 +56,7 @@ export default {
     <div class="container">
         <div class="row">
             <div class="col-md-6">
-                <div style="max-width: 30vw; margin: 10px auto">
+                <div class="carousel" style="margin: 10px auto">
                     <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-indicators">
                             <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0"
@@ -54,12 +66,12 @@ export default {
                         </div>
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <img :src="'http://localhost:8080/api/get-picture/' + this.item.url"
+                                <img :src="host + '/api/get-picture/' + this.item.url"
                                      class="d-block w-100"
                                      alt="">
                             </div>
                             <div class="carousel-item">
-                                <img :src="'http://localhost:8080/api/get-picture/' + this.item.url +'2'"
+                                <img :src="host + '/api/get-picture/' + this.item.url +'2'"
                                      class="d-block w-100"
                                      alt="">
                             </div>
@@ -81,15 +93,15 @@ export default {
                 <h1 style="color: #FFFFFF;">{{ this.item.title }}</h1>
                 <h4 style="color: #FFFFFF; margin-top: 30px">{{this.item.price}}p</h4>
 
-                    <select name="size" v-on="itemSize">
+                    <select name="size" v-model="this.itemSize">
 
-                        <option v-show="this.item.s_size > 0" value="s_size">S</option>
+                        <option v-show="this.item.s_size > 0" value="S">S</option>
 
-                        <option v-show="this.item.m_size > 0" value="m_size">M</option>
+                        <option v-show="this.item.m_size > 0" value="M">M</option>
 
-                        <option v-show="this.item.l_size > 0" value="l_size">L</option>
+                        <option v-show="this.item.l_size > 0" value="L">L</option>
 
-                        <option v-show="this.item.xl_size > 0" value="xl_size">XL</option>
+                        <option v-show="this.item.xl_size > 0" value="XL">XL</option>
 
                     </select>
 
@@ -107,5 +119,13 @@ export default {
 <style scoped>
 .container {
     justify-content: center
+}
+.carousel {
+    @media(max-width: 600px) {
+        max-width: 90vw
+    }
+    @media(min-width: 600px) {
+        max-width: 30vw
+    }
 }
 </style>

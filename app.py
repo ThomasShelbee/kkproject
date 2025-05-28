@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cd_collection.db'
@@ -9,6 +10,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app)
+
+app.config['MAIL_SERVER'] = 'postbox.cloud.yandex.net'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'YCAJE6Zi1vyP-G5E9py5UJmtW'
+app.config['MAIL_PASSWORD'] = 'BFTJIMReImC3SdhmYyEw+wpkIYD63IGkBWf4nh8jE5Du'
+app.config['MAIL_USE_TLS'] = True
+mail = Mail(app)
+
 
 # модель для хранения задачи
 class Items(db.Model):
@@ -85,7 +94,25 @@ def delete_promo(promo_id):
         db.session.delete(promo)
         return jsonify({"deleted_id": promo_id})
 
-# при запросе главной страницы возвращаем html файл с фронтендом как файл (без шаблонизатора)
+@app.route('/api/purchase', methods=['POST'])
+def new_purchase():
+    purchase = request.get_json()
+    print(purchase['phone'])
+    msg_to_customer = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=[purchase['email']])
+    msg_to_seller = Message('Заказ успешно создан!', sender='notes@notesservice.ru', recipients=['defolt.pon.da@gmail.com'])
+    msg_to_customer.body = 'Здравствуйте, ' + purchase['name'] + '! \nМы приняли ваш заказ на сумму ' + str(purchase['sum']) + '. \nВы заказали: \n'
+    msg_to_seller.body = 'Данные заказчика: \nИмя: ' + purchase['name'] + '\nНомер телефона: ' + str(purchase['phone']) + '\nПочта: ' + purchase['email'] + '\n'
+    if purchase['discount'] > 0:
+        msg_to_seller.body += 'Использован промокод ' + str(purchase['promo'] + '\n')
+    for item in purchase['cart']:
+        msg_to_customer.body += item['title'] + '      ' + item['size'] + '      x' + str(item['quantity']) + '      ' + str(item['price']) + 'P \n'
+        msg_to_seller.body += item['title'] + '      ' + item['size'] + '      x' + str(item['quantity']) + '      ' + str(item['price']) + 'P \n'
+    msg_to_customer.body += 'Скидка по промокоду составила ' + str(purchase['discount']) + 'P'
+    mail.send(msg_to_customer)
+    mail.send(msg_to_seller)
+    return jsonify({'purchase': purchase}), 200
+
+
 @app.route('/')
 def index():
     return "Hello"

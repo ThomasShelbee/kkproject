@@ -1,5 +1,3 @@
-
-
 <script>
 import {api_host} from "@/api.js"
 

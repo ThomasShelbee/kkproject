@@ -9,7 +9,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cd_collection.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-CORS(app)
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "https://kk.silaeder.codingprojects.ru",
+        "methods": ["GET", "POST"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 app.config['MAIL_SERVER'] = 'postbox.cloud.yandex.net'
 app.config['MAIL_PORT'] = 587
